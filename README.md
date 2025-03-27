@@ -19,5 +19,42 @@ Este proyecto forma parte del proceso de selección para la vacante de ML Engine
 - Skills en Python
 
 ## Estructura del proyaecto. 
+```
+|   main.py
+|   README.md
+|   requirements.txt
+|
++---data
+|   +---processed
+|   |       diabetic_data_preprocessed.csv
+|   |
+|   \---raw
+|           diabetic_data.csv
+|
++---notebooks
+|       notebook_diabetic_data.ipynb
+|
+\---src
+    |   __init__.py
+    |
+    +---models
+    |       best_model.py
+    |       modelo_catboost.pkl
+    |       modelo_LGBMClassifier.pkl
+    |
+    +---predict
+    |       predictor.py
+    |
+    +---preprocessing
+    |       clean_data.py
+    |
+    +---train
+    |       traint_models.py
+    |
+    \---utils
+            best_parameters_foriteration.json
+            config.py
+            constants.py
 
+```
 ## Features
