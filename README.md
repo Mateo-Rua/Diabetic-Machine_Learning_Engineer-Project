@@ -48,9 +48,6 @@ Este proyecto forma parte del proceso de selección para la vacante de ML Engine
     +---preprocessing
     |       clean_data.py
     |
-    +---test
-    |       test.txt
-    |
     +---train
     |       traint_models.py
     |
@@ -58,5 +55,6 @@ Este proyecto forma parte del proceso de selección para la vacante de ML Engine
             best_parameters_foriteration.json
             config.py
             constants.py
+
 ```
 ## Features
