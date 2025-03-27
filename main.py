@@ -43,7 +43,7 @@ def run_pipeline():
         logger.info("Evaluando modelo...")
         evaluate_model(model, X_test, y_test)
         
-        # 5.  OJOOOO ESTE ES SOLO UN EJEMPLO DE PREDICCION
+        # 5..  OJOOOO ESTE ES SOLO UN EJEMPLO DE PREDICCION
         logger.info("Generando predicciones de ejemplo...")
         sample_data = X_test.iloc[:5].copy()
         predictions = predict(sample_data)
