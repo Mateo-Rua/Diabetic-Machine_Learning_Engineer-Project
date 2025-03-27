@@ -19,7 +19,7 @@ Este proyecto forma parte del proceso de selección para la vacante de ML Engine
 - Skills en Python
 
 ## Estructura del proyaecto. 
-
+```
 |   main.py
 |   README.md
 |   requirements.txt
@@ -58,6 +58,5 @@ Este proyecto forma parte del proceso de selección para la vacante de ML Engine
             best_parameters_foriteration.json
             config.py
             constants.py
-
-
+```
 ## Features
