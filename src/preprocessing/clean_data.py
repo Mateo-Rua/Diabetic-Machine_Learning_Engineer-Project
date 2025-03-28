@@ -3,8 +3,6 @@ import pandas as pd
 from utils.constants import list_order, list_numeric_int_Deabetic,medicamentos,ML_training_features
 
 
-
-
 def ordenar_df(df,lista):
     """  
     Ordenar la estructura del nuevo dataset,
