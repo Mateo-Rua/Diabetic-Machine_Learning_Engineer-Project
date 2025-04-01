@@ -91,17 +91,17 @@ Configuraciones, constantes y parámetros reutilizables.
 
 ### main.py
 
-    - Automatiza todo el flujo de trabajo del proyecto:
-    
-    - Carga datos crudos desde data/raw/
-    
-    - Ejecuta el preprocesamiento (src/preprocessing/clean_data.py)
-    
-    - Entrena modelos con los parámetros óptimos (src/train/train_models.py)
-    
-    - Evalúa métricas de performance
-    
-    - Guarda artefactos finales en src/models/
+- Automatiza todo el flujo de trabajo del proyecto:
+
+- Carga datos crudos desde data/raw/
+
+- Ejecuta el preprocesamiento (src/preprocessing/clean_data.py)
+
+- Entrena modelos con los parámetros óptimos (src/train/train_models.py)
+
+- Evalúa métricas de performance
+
+- Guarda artefactos finales en src/models/
 
 
 
