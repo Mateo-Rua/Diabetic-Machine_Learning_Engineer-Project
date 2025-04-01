@@ -62,9 +62,11 @@ Este proyecto forma parte del proceso de selección para la vacante de ML Engine
 
 ### data/
 
-### raw: Datos originales descargados o recibidos (no modificados).
+### raw: 
+Datos originales descargados o recibidos (no modificados).
 
-### processed: Datos procesados listos para entrenar modelos (limpieza, transformaciones).
+### processed:
+Datos procesados listos para entrenar modelos (limpieza, transformaciones).
 
 ### notebooks/
 
@@ -72,12 +74,17 @@ Análisis exploratorios (EDA), pruebas de conceptos, o visualizaciones intermedi
 
 ### src/
 
-### models: Modelos serializados (.pkl) y lógica para gestionarlos.
+### models: 
+Modelos serializados (.pkl) y lógica para gestionarlos.
 
-### predict: Funcionalidad para hacer predicciones en producción.
+### predict: 
+Funcionalidad para hacer predicciones en producción.
 
-### preprocessing: Transformación de datos crudos a datos listos para modelos.
+### preprocessing: 
+Transformación de datos crudos a datos listos para modelos.
 
-### train: Scripts de entrenamiento de modelos (incluyendo validación).
+### train:
+Scripts de entrenamiento de modelos (incluyendo validación).
 
-### utils: Configuraciones, constantes y parámetros reutilizables.
+### utils:
+Configuraciones, constantes y parámetros reutilizables.
