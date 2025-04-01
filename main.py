@@ -1,72 +1,128 @@
-from pathlib import Path
+import argparse
+import sys
+import joblib
 import pandas as pd
-import logging
+from pathlib import Path
 from sklearn.model_selection import train_test_split
+
+# Configuración de rutas
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
+
 from src.preprocessing.clean_data import main_clean
-from src.train.train_models import train_final_model, evaluate_model
-from src.predict.predictor import predict, save_model_metadata
-from src.utils.config import DATA_PATHS  
+from src.train.traint_models import cross_validate_model,optimize_hyperparams, train_final_model,evaluate_model
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Rutas clave
+models_dir = current_dir / "src" / "models"
+model_path = models_dir / "modelo_LGBMClassifier_final4.pkl"
+model_path_predict = models_dir / "modelo_LGBMClassifier_final.pkl"
+DATA_PATH = current_dir / "data" / "processed" / "diabetic_data_preprocessed.csv"
 
-def run_pipeline():
+def main(args):
     try:
-        # 1. Cargamos y limpieza
-        logger.info("Cargando datos crudos...")
-        raw_data_path = Path(DATA_PATHS['raw'])
-        raw_data = pd.read_csv(raw_data_path)
-        
-        logger.info("Ejecutando limpieza de datos...")
-        cleaned_data = main_clean(raw_data)
-        logger.info(f"Datos limpiados. Forma: {cleaned_data.shape}")
+        if args.modo == "full":
+            # --------------------------------------------
+            # MODO FULL: Entrenamiento + Preprocesamiento
+            # --------------------------------------------
+            print("\n Preprocesando datos...")
+            raw_df = pd.read_csv(
+                current_dir / "data" / "raw" / "diabetic_data.csv"
+            )
+            cleaned_df = main_clean(raw_df)
+            cleaned_df = pd.read_csv(current_dir / "data" / "processed" / "diabetic_data_preprocessed.csv")
+            #cleaned_df.to_csv(current_dir / "data" / "processed" / "diabetic_data_preprocessed.csv", index=False)
+            
+            print("\n Definimos Features  X , y...")
+            X = cleaned_df.drop(columns=["target"])
+            y = cleaned_df["target"]
+            
+            print("\n Train_test_split...")
+            # Split de datos
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, 
+                test_size=0.3, 
+                random_state=42,
+                stratify=y
+            )
+            
 
-        # 2. Preparamos de datos
-        logger.info("Dividiendo datos en entrenamiento y prueba...")
-        X = cleaned_data.drop("readmitted", axis=1)
-        y = cleaned_data["readmitted"]
-        
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y,
-            test_size=0.3,
-            stratify=y,  # Mantener distribución de clases
-            random_state=123
-        )
+            print("\n Optimizando hiperparámetros...")
+            # Optimizar hiperparámetros y entrenar
+            best_params = optimize_hyperparams(X_train, y_train, n_trials=5)
 
-        # 3. Entrenamiento del modelo
-        logger.info("Entrenando modelo final...")
-        model = train_final_model(X_train, y_train)
-        
-        # 4. Evaluación
-        logger.info("Evaluando modelo...")
-        evaluate_model(model, X_test, y_test)
-        
-        # 5..  OJOOOO ESTE ES SOLO UN EJEMPLO DE PREDICCION
-        logger.info("Generando predicciones de ejemplo...")
-        sample_data = X_test.iloc[:5].copy()
-        predictions = predict(sample_data)
-        logger.info(f"Predicciones de ejemplo:\n{pd.Series(predictions, index=sample_data.index)}")
-        
-        # 6. Guardarmos recursos
-        logger.info("Guardando artefactos del modelo...")
-        model_path = Path(DATA_PATHS['models']) / "trained_model.pkl"
-        model_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Guardarmos modelo con metadatos
-        save_model_metadata(
-            model=model,
-            model_path=model_path,
-            feature_names=list(X_train.columns),
-            model_version="1.0.0"
-        )
-        
-        logger.info("Pipeline completado exitosamente!")
+            print("\n Entrenando modelo...")
+            final_model = train_final_model(X_train, y_train, best_params)
+
+            print("\n Validacion cruzada...")
+            cross_validate_model(final_model, X_train, y_train)
+            
+            print("\n Evaluacion del modelo...")
+            evaluate_model(final_model, X_test, y_test)
+            # Guardar modelo
+            joblib.dump(final_model, model_path)
+            print(f" Modelo guardado en: {model_path}")
+
+        elif args.modo == "predict":
+
+            # MODO PREDICT: Solo predicciones
+         
+            print("\n Realizando predicciones...")
+            # Cargar modelo y datos
+            modelo = joblib.load(model_path_predict) 
+            cleaned_data = pd.read_csv(current_dir / "data" / "test" / "test_samples.csv")
+            #X_tesst = cleaned_data.drop(columns=["target"]).iloc[:, :50]
+            
+            # Predecir y guardar
+            predictions = modelo.predict(cleaned_data)
+            #df_compare = DATA_PATH['target']
+            df_target = pd.read_csv(DATA_PATH)
+            target_series = df_target['target'].head(50).squeeze()
+
+            predictions_df = pd.DataFrame({
+                'Predicción': predictions,
+                'Target Real': target_series
+            })
+            
+            # Guardar en CSV
+            predictions_df.to_csv(args.output_file, index=False)
+            
+            # imprimer comparacion entre predicciones y target real
+            print("\n Predicciones realizadas:")
+            print(predictions_df.head(20))  # Muestra las primeras 10 predicciones
+            pd.DataFrame(predictions, columns=["prediccion"]).to_csv(args.output_file, index=False)
+            print(f" Predicciones guardadas en: {args.output_file}")
 
     except Exception as e:
-        logger.error(f"Error en el pipeline: {str(e)}", exc_info=True)
+        print(f"\n Error: {str(e)}")
         raise
 
 if __name__ == "__main__":
-    run_pipeline()
+    # Aqui arreglo los argumentos para ejecutar las funciones
+    parser = argparse.ArgumentParser(description="Pipeline de ML: Entrenar o predecir")
+    parser.add_argument(
+        "--modo", 
+        type=str, 
+        choices=["full", "predict"], 
+        required=True,  
+        help="Modo de ejecución: 'full' (entrenar) o 'predict' (predecir)"
+    )
+    parser.add_argument(
+        "--input_file", 
+        type=str, 
+        default="data/test/test_samples.csv",
+        help="Ruta a archivo CSV para predicciones"
+    )
+    parser.add_argument(
+        "--output_file", 
+        type=str, 
+        default="data/test/predictions.csv",
+        help="Ruta para guardar resultados"
+    )
+    
+    args = parser.parse_args()
+    main(args)
+
+
+
+
+

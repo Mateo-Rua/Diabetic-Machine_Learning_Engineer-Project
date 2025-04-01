@@ -2,34 +2,42 @@ import joblib
 import pandas as pd
 from pathlib import Path
 
+# Configuración de rutas 
+model_path = Path(__file__).parent.parent / "models" / "modelo_LGBMClassifier_final.pkl"
+test_path = Path(__file__).parent.parent.parent / "data" / "test" / "test_samples.csv"
+
 def load_model():
-    """Carga el modelo entrenado"""
-    model_path = Path(__file__).parent.parent / "models" / "modelo_LGBMClassifier.pkl"
+    #Carga el modelo entrenado
+    if not model_path.exists():
+        raise FileNotFoundError(f" Modelo no encontrado en: {model_path}")
     return joblib.load(model_path)
 
 def predict(input_data: pd.DataFrame):
-    """
-    Realiza predicciones con nuevos datos.
-    Args:
-        input_data: DataFrame con las mismas features que usó el modelo
-        en face de entenamiento.
-    Returns:
-        Array con las predicciones (0 o 1).
-    """
+    
+    #cargar modelo
     model = load_model()
-    return model.predict(input_data)
+    
+    #predicciones
+    predictions = model.predict(input_data)
+    
+    # Crear DataFrame con resultados
+    result_df = input_data.copy()
+    result_df["prediccion"] = predictions
+    return result_df
 
-
-
-# Ejemplo de como usar la prediccion del modelo
-"""
 if __name__ == "__main__":
-    # Ejemplo con datos que simulan tu esquema real
-    test_data = pd.DataFrame({
-        "age": [5],  # Ejemplo: valor codificado
-        "A1Cresult": [7.0],
-        # ... (todas las features usadas en entrenamiento)
-    })
-    print("Predicción:", predict(test_data))"
-
-"""
+    try:
+        # 1. Cargamod datos de prueba
+        test_data = pd.read_csv(test_path)
+        
+        # 2. Hacemos predicciones
+        resultado = predict(test_data)
+        
+        # 3.Mostramos resultados
+        print("\n Predicciones exitosas (primeras 10 filas):")
+        print(resultado[["prediccion"]].head(20))
+        
+    except Exception as e:
+        print(f"\n Error: {str(e)}")
+        
+        

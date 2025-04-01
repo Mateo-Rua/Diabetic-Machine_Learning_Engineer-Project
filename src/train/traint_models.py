@@ -6,17 +6,22 @@ import pandas as pd
 import lightgbm as lgb
 from pathlib import Path
 from sklearn.model_selection import train_test_split, KFold, cross_validate
+from sklearn.metrics import accuracy_score,recall_score,roc_auc_score
+    
 
 # Configuración de paths
 current_dir = Path(__file__).parent
 repo_root = current_dir.parent.parent
 DATA_PATH = repo_root / "data" / "processed" / "diabetic_data_preprocessed.csv"
+PARAMS_PATH = repo_root / "src" / "utils" / "best_parameters_foriteration.json"
+MODELS_DIR = repo_root / "src" / "models" 
 
 def load_data():
     """Carga y divide los datos"""
     df = pd.read_csv(DATA_PATH)
-    X = df.drop(columns=["readmitted"])  
-    y = df["readmitted"]
+    #df = df.iloc[:, 1:]
+    X = df.drop(columns=["target"])  
+    y = df["target"]
     return train_test_split(X, y, test_size=0.3, random_state=42)
 
 def train_baseline_model(X_train, y_train):
@@ -58,21 +63,24 @@ def cross_validate_model(model, X_train, y_train):
     return cv
 
 
-def optimize_hyperparams(X_train, y_train, n_trials=20):
+def optimize_hyperparams(X_train, y_train, n_trials):
     """Optimización con Optuna"""
     pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
 
     def objective(trial):
+
         params = {
-            "n_estimators": trial.suggest_int("n_estimators", 50, 500, step=50),
-            "max_depth": trial.suggest_int("max_depth", 3, 12),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
-            "num_leaves": trial.suggest_int("num_leaves", 20, 100, step=10),
-            "min_child_samples": trial.suggest_int("min_child_samples", 10, 100, step=10),
-            "subsample": trial.suggest_float("subsample", 0.6, 1.0),
-            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
-            "reg_alpha": trial.suggest_float("reg_alpha", 0, 1),
-            "reg_lambda": trial.suggest_float("reg_lambda", 0, 1),
+            
+        "n_estimators": trial.suggest_int("n_estimators", 50, 1000, step=50),
+        "max_depth": trial.suggest_int("max_depth", 3, 12),
+        "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+        "num_leaves": trial.suggest_int("num_leaves", 20, 100, step=10),
+        "min_child_samples": trial.suggest_int("min_child_samples", 10, 100, step=10),
+        "subsample": trial.suggest_float("subsample", 0.6, 1.0),
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+        "reg_alpha": trial.suggest_float("reg_alpha", 0, 1),
+        "reg_lambda": trial.suggest_float("reg_lambda", 0, 1),
+           
         }
 
         model = lgb.LGBMClassifier(
@@ -88,16 +96,18 @@ def optimize_hyperparams(X_train, y_train, n_trials=20):
 
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=n_trials)
-    return study.best_params
+
+    best_params = study.best_params
+    best_params["scale_pos_weight"] = pos_weight  
+
+    return best_params  
 
 def train_final_model(X_train, y_train, best_params):
     """Entrena modelo final con mejores hiperparámetros"""
-    pos_weight = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
-    
+    #print('best_params: ',best_params)
     model = lgb.LGBMClassifier(
         objective="binary",
         random_state=123,
-        scale_pos_weight=pos_weight,
         **best_params
     )
     model.fit(X_train, y_train)
@@ -112,12 +122,7 @@ def evaluate_model(model, X_test, y_test):
     - Especificidad (recall para clase negativa)
     - ROC-AUC
     """
-    from sklearn.metrics import (
-        accuracy_score,
-        recall_score,
-        roc_auc_score
-    )
-    
+
     y_pred = model.predict(X_test)
     
     print('\nMétricas de evaluación:')
@@ -137,29 +142,38 @@ if __name__ == "__main__":
         
         # 1. Modelo baseline
         baseline_model = train_baseline_model(X_train, y_train)
-        print("\nEvaluación del modelo baseline:")
+        print("\n- Definicion y evaluacion del modelo base:")
         evaluate_model(baseline_model, X_test, y_test)
+        print("\n OK ")
 
-        print("\nEvaluación del modelo base:")
+        print("\n- Evaluación por validacion cruzada del modelo base:")
         cv_baseline = cross_validate_model(baseline_model, X_train, y_train)
+        print("\n OK ")
         
         # 2. Optimización
+        print("\n- Optimizacion de hiper parametros:")
         best_params = optimize_hyperparams(X_train, y_train, n_trials=20)
-        print("\nMejores hiperparámetros encontrados:")
+        print("\n Mejores hiperparámetros encontrados:")
         print(best_params)
+        print("\n OK ")
 
         # 3. Modelo final
         final_model = train_final_model(X_train, y_train, best_params)
-        print("\nEvaluación del modelo optimizado:")
+        print("\n- Evaluación del modelo optimizado:")
         evaluate_model(final_model, X_test, y_test)
+        print("\n OK ")
 
         # Guardar los mejores hiper parametros de los entrnemientos.
-        params_path = repo_root / "src" / "utils" / "best_parameters_foriteration.json"
-        with open(params_path, "w") as f:
+        print("\n- Guardando los mejores hiper parametros en utils/best_parameters_foriteration:")
+        with open(PARAMS_PATH, "w") as f:
             json.dump(best_params, f, indent=4)  
-        
+        print("\n OK ")
+
+
         #Guardar modelo usando joblib, suele ser mas eficiente que usar directamente pickle
-        joblib.dump(final_model, repo_root / "models" / "modelo_LGBMClassifier.pkl")
+        print("\n- Guardando modelo optimizado en models/")
+        joblib.dump(final_model, MODELS_DIR / "modelo_LGBMClassifier4.pkl") 
+        print("\n OK ")
 
     except Exception as e:
         print(f"\n ERROR: {str(e)}")

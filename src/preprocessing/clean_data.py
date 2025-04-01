@@ -1,7 +1,16 @@
 from pathlib import Path
 import pandas as pd
+import sys
+
+# Configuración de paths
+current_dir = Path(__file__).parent  # src/preprocessing/
+src_dir = current_dir.parent  # src/
+sys.path.append(str(src_dir))  
 from utils.constants import list_order, list_numeric_int_Deabetic,medicamentos,ML_training_features
 
+
+repo_root = current_dir.parent.parent  
+raw_data_path = repo_root / "data" / "raw" / "diabetic_data.csv"
 
 def ordenar_df(df,lista):
     """  
@@ -180,6 +189,7 @@ def main_clean(df):
     df = drop_columns(df)
     df = transform_and_categorize(df)
     df = process_A1Cresult(df)
+    df =process_max_glu_serum(df)
     df = process_medicamentos(df,medicamentos)
     df = process_change(df)
     df = process_diabetesMed(df)
@@ -190,17 +200,19 @@ def main_clean(df):
 
 if __name__ == "__main__":
 
-    current_dir = Path(__file__).parent  # src/preprocessing/
-    repo_root = current_dir.parent.parent  # Carpeta repo/
-    raw_data_path = repo_root / "data" / "raw" / "diabetic_data.csv"
     
     try:
-        raw_df = pd.read_csv(raw_data_path)
+        print("\n- Preprocesando data:")
+        #raw_df = pd.read_csv(raw_data_path)
+        raw_df = pd.read_csv(raw_data_path, dtype='object')  
         cleaned_df = main_clean(raw_df)
+        print("\n OK ")
 
+        print("\n- Guardando data preprocesada:")
         # Guarda el DataFrame procesado
-        processed_path = repo_root / "data" / "processed" / "diabetic_data_preprocessed.csv"
+        processed_path = repo_root / "data" / "processed" / "diabetic_data_preprocessed2.csv"
         cleaned_df.to_csv(processed_path, index=False)
+        print("\n OK ")
 
     except Exception as e:
         raise Exception(f"Error: {str(e)}")  
