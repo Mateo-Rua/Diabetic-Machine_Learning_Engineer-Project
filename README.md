@@ -88,3 +88,28 @@ Scripts de entrenamiento de modelos (incluyendo validación).
 
 ### utils:
 Configuraciones, constantes y parámetros reutilizables.
+
+### main.py
+
+    - Automatiza todo el flujo de trabajo del proyecto:
+    
+    - Carga datos crudos desde data/raw/
+    
+    - Ejecuta el preprocesamiento (src/preprocessing/clean_data.py)
+    
+    - Entrena modelos con los parámetros óptimos (src/train/train_models.py)
+    
+    - Evalúa métricas de performance
+    
+    - Guarda artefactos finales en src/models/
+
+
+
+### app_gradio.py
+
+- Interfaz de usuario para demostrar el modelo en producción:
+
+- Carga el modelo entrenado (src/models/modelo_catboost.pkl)
+
+- Muestra predicciones de riesgo de diabetes (probabilidad y clasificación binaria)
+
