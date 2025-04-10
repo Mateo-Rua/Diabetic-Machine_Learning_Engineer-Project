@@ -124,10 +124,10 @@ Configuraciones, constantes y parámetros reutilizables.
 ### 1. Clonar el repositorio:
 ```bash
 # git clone: Descarga una copia del código del repositorio de GitHub a tu computadora.
-git clone https://github.com/Mateo-Rua/Diabetic-Machine_Learning-Project.git
+git clone https://github.com/Mateo-Rua/Diabetic-Machine_Learning_Engineer-Project.git
 
 # cd ecommerce-scraper: Entra en la carpeta del proyecto que acabas de clonar.
-cd Diabetic-Machine_Learning-Project
+cd Diabetic-Machine_Learning_Engineer-Project
 ```
 
 ### 2. Instalar dependencias:
